@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Your Bag — Luxe Beauty</title>
     <link rel="stylesheet" href="css/styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
@@ -126,7 +126,7 @@
                             <p class="shade-text">Shade: ${item.shade_code} &middot; Qty: ${item.quantity}</p>
                         </div>
                         <div class="cart-item-actions">
-                            <span class="item-price">$${(item.price * item.quantity).toFixed(2)}</span>
+                            <span class="item-price">\u20B9${(item.price * item.quantity).toFixed(0)}</span>
                             <button class="remove-btn" onclick="removeItem('${item.product_id}')">
                                 <i class="fas fa-trash-alt"></i> Remove
                             </button>
@@ -135,7 +135,7 @@
                 `;
             }).join('');
 
-            document.getElementById('cartTotal').textContent = `$${total.toFixed(2)}`;
+            document.getElementById('cartTotal').textContent = `\u20B9${total.toFixed(0)}`;
         }
 
         async function removeItem(productId) {

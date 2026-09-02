@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Luxe Beauty — Premium Makeup Store</title>
     <link rel="stylesheet" href="css/styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
@@ -93,7 +93,7 @@
                 <div class="feature-card">
                     <i class="fas fa-truck"></i>
                     <h4>Free Shipping</h4>
-                    <p>On orders over $50</p>
+                    <p>On orders over ₹2,500</p>
                 </div>
                 <div class="feature-card">
                     <i class="fas fa-camera"></i>
@@ -207,8 +207,8 @@
                     </a>
                     <div class="product-info">
                         <h3>${product.name}</h3>
-                        <p class="shade-name">${product.shade_code}</p>
-                        <p class="price">$${Number(product.price).toFixed(2)}</p>
+                        <p class="shade-name"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${product.shade_code};vertical-align:middle;margin-right:4px;box-shadow:0 1px 4px ${product.shade_code}60;"></span>${product.shade_code}</p>
+                        <p class="price">\u20B9${Number(product.price).toFixed(0)}</p>
                         <button class="btn btn-primary btn-block" onclick="addToCartFromHome('${product.id}')">
                             <i class="fas fa-shopping-bag"></i> Add to Bag
                         </button>

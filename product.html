@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Product — Luxe Beauty</title>
     <link rel="stylesheet" href="css/styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
@@ -117,7 +117,7 @@
 
             document.getElementById('productName').textContent = productData.name;
             document.getElementById('productShade').textContent = `Shade: ${productData.shade_code}`;
-            document.getElementById('productPrice').textContent = `$${Number(productData.price).toFixed(2)}`;
+            document.getElementById('productPrice').textContent = `\u20B9${Number(productData.price).toFixed(0)}`;
             document.getElementById('productCategory').textContent = `Category: ${productData.category}`;
             document.getElementById('loadingState').style.display = 'none';
             document.getElementById('productContent').style.display = 'grid';
