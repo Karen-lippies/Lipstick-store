@@ -41,9 +41,12 @@
     <!-- ========== HERO SECTION ========== -->
     <section class="hero">
         <div class="container">
-            <h1>Express Your Beauty</h1>
-            <p>Discover our luxurious collection of lipsticks and eye makeup in every shade imaginable</p>
-            <a href="#products" class="btn btn-primary">Shop Now</a>
+            <h1>Unleash Your <span>Inner Radiance</span></h1>
+            <p>Discover handcrafted luxury makeup in every shade imaginable. Bold lips, captivating eyes, unforgettable you.</p>
+            <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap;">
+                <a href="#products" class="btn btn-primary"><i class="fas fa-sparkles"></i> Shop Collection</a>
+                <a href="tryon.html" class="btn btn-outline"><i class="fas fa-magic"></i> Virtual Try-On</a>
+            </div>
         </div>
     </section>
 
@@ -85,6 +88,7 @@
     <!-- ========== FEATURES ========== -->
     <section class="features">
         <div class="container">
+            <h2 class="section-title">Why Luxe Beauty</h2>
             <div class="feature-grid">
                 <div class="feature-card">
                     <i class="fas fa-truck"></i>
@@ -186,14 +190,17 @@
                 return;
             }
 
-            grid.innerHTML = products.map(product => `
+            grid.innerHTML = products.map(product => {
+                const icon = product.category === 'Lipstick' ? 'fa-lipstick' : product.category === 'Eyeliner' ? 'fa-pen-nib' : 'fa-eye';
+                return `
                 <div class="product-card">
                     <a href="product.html?id=${product.id}">
                         <div class="product-image" style="background: linear-gradient(135deg, ${product.shade_code}30 0%, ${product.shade_code}10 100%);">
+                            <span class="product-badge">${product.category}</span>
                             ${product.image_url
                                 ? `<img src="${product.image_url}" alt="${product.name}">`
                                 : `<div class="placeholder-img" style="background-color:${product.shade_code}20;">
-                                     <i class="fas ${product.category === 'Lipstick' ? 'fa-lipstick' : product.category === 'Eyeliner' ? 'fa-pen-nib' : 'fa-eye'}" style="color:${product.shade_code};"></i>
+                                     <i class="fas ${icon}" style="color:${product.shade_code};"></i>
                                    </div>`
                             }
                         </div>
@@ -202,10 +209,12 @@
                         <h3>${product.name}</h3>
                         <p class="shade-name">${product.shade_code}</p>
                         <p class="price">$${Number(product.price).toFixed(2)}</p>
-                        <button class="btn btn-primary btn-block" onclick="addToCartFromHome('${product.id}')">Add to Bag</button>
+                        <button class="btn btn-primary btn-block" onclick="addToCartFromHome('${product.id}')">
+                            <i class="fas fa-shopping-bag"></i> Add to Bag
+                        </button>
                     </div>
-                </div>
-            `).join('');
+                </div>`;
+            }).join('');
         }
 
         // --- Filter by category ---
@@ -290,6 +299,36 @@
             toast.className = 'toast ' + type + ' show';
             setTimeout(() => { toast.className = 'toast'; }, 2500);
         }
+
+        // --- Header scroll effect ---
+        window.addEventListener('scroll', () => {
+            const header = document.querySelector('.header');
+            if (window.scrollY > 50) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+
+        // --- Scroll reveal animation ---
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                    revealObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.category-card, .feature-card, .product-card').forEach(el => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(30px)';
+                el.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+                revealObserver.observe(el);
+            });
+        });
     </script>
 </body>
 </html>
