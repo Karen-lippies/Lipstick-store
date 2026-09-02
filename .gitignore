@@ -15,3 +15,9 @@ Thumbs.db
 # Logs and temporary files
 *.log
 node_modules/
+
+# ============================================================
+# Karen Beauty React app source (only the built ./out is deployed)
+# ============================================================
+/karen-beauty/
+.env.local
