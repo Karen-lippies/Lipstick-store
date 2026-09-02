@@ -125,22 +125,21 @@ const Auth = {
     // --------------------------------------------------------
     // Get the current session (call once on page load)
     // --------------------------------------------------------
-    init() {
-        return new Promise((resolve) => {
-            const session = sb.auth.getSession();
-            if (session.data && session.data.session) {
-                const user = session.data.session.user;
-                this.currentUser = user;
-                this.checkAdmin(user.id).then((isAdmin) => {
-                    this.isAdmin = isAdmin;
-                    resolve(user);
-                });
-            } else {
-                this.currentUser = null;
-                this.isAdmin = false;
-                resolve(null);
+    async init() {
+        try {
+            const { data: { session }, error } = await sb.auth.getSession();
+            if (error) throw error;
+            if (session) {
+                this.currentUser = session.user;
+                this.isAdmin = await this.checkAdmin(session.user.id);
+                return session.user;
             }
-        });
+        } catch (e) {
+            console.error("Auth init error:", e);
+        }
+        this.currentUser = null;
+        this.isAdmin = false;
+        return null;
     },
 
     // --------------------------------------------------------
