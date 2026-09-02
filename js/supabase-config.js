@@ -1,17 +1,19 @@
 // ============================================================
 // SUPABASE CONFIGURATION
 // ============================================================
-// HOW TO GET YOUR KEYS:
-// 1. Go to https://supabase.com and sign up (free)
-// 2. Create a new project (name it e.g. "beauty-store", set a password)
-// 3. Wait for the project to finish building (~2 min)
-// 4. Go to Project Settings > API
-// 5. Copy the "Project URL" and the "anon public" key
-// 6. Paste them below
+// These come from: Supabase Dashboard > Project Settings > API
+//
+//  * PUBLISHABLE KEY (sb_publishable_...) — safe to put in the
+//    browser. It replaces the old "anon" key. Data is still
+//    protected by the Row Level Security rules in
+//    supabase-schema.sql.
+//
+//  * NEVER put a SECRET key (sb_secret_...) in this file —
+//    that key bypasses all security and must stay private.
 // ============================================================
 
-const SUPABASE_URL = "YOUR_SUPABASE_URL";        // e.g. https://xyzcompany.supabase.co
-const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY"; // the "anon public" key
+const SUPABASE_URL = "https://qutosikuhxabuujxgnnp.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_DDSGfsBuO3lKIJM1w-8Log_YcKHwpf_";
 
 // Create the Supabase client
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
