@@ -129,30 +129,20 @@
     </footer>
 
     <!-- ========== SCRIPTS ========== -->
-    <!-- Supabase (free): for loading shades from the products table -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-    <!-- App modules -->
     <script src="js/supabase-config.js"></script>
     <script src="js/supabase-products.js"></script>
+
+    <!-- MediaPipe Face Mesh — pinned to v0.4 for stability -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4/face_mesh.js" crossorigin="anonymous"></script>
+
+    <!-- Try-on module — loads AFTER MediaPipe -->
     <script src="js/tryon.js"></script>
 
-    <!-- MediaPipe Face Mesh (runs 100% in the browser, free) -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
-
     <script>
-        // Initialize try-on when page loads
         document.addEventListener('DOMContentLoaded', () => {
             TryOn.init();
-        });
-
-        // Hide camera placeholder when camera starts
-        document.getElementById('startCamera')?.addEventListener('click', () => {
-            setTimeout(() => {
-                const placeholder = document.getElementById('cameraPlaceholder');
-                if (placeholder) placeholder.style.display = 'none';
-            }, 1500);
         });
     </script>
 </body>
