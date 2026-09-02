@@ -1,0 +1,20 @@
+# ============================================================
+# .gitignore — tells Git which files to NOT upload to GitHub
+# ============================================================
+
+# Never upload Firebase config with real keys (contains your API secrets)
+js/firebase-config.js
+
+# Don't upload the live site data
+firebase.json
+.firebase/
+*.local
+
+# OS files (Windows/Mac)
+Thumbs.db
+.DS_Store
+
+# Logs and temporary files
+*.log
+node_modules/
+.DS_Store

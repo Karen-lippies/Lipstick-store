@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product — Luxe Beauty</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- ========== HEADER ========== -->
+    <header class="header">
+        <div class="container">
+            <div class="header-inner">
+                <a href="index.html" class="logo"><i class="fas fa-lipstick"></i> LUXE BEAUTY</a>
+                <ul class="nav-links">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="tryon.html">Virtual Try-On</a></li>
+                    <li><a href="index.html#products">Shop</a></li>
+                </ul>
+                <div class="nav-icons">
+                    <a href="cart.html"><i class="fas fa-shopping-bag"></i></a>
+                    <a href="login.html"><i class="fas fa-user"></i></a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ========== PRODUCT DETAIL ========== -->
+    <section class="product-detail">
+        <div class="container">
+            <div class="loading-page" id="loadingState"><div class="spinner"></div> Loading product...</div>
+
+            <div class="product-detail-grid" id="productContent" style="display:none;">
+                <div class="product-detail-image" id="productImage">
+                    <!-- Image or placeholder loaded by JS -->
+                </div>
+                <div class="product-detail-info">
+                    <h1 id="productName"></h1>
+                    <p class="shade-label" id="productShade"></p>
+                    <p class="detail-price" id="productPrice"></p>
+                    <p id="productCategory" style="margin-bottom:20px;"></p>
+
+                    <div class="qty-row">
+                        <label>Quantity:</label>
+                        <div class="qty-control">
+                            <button onclick="changeQty(-1)">−</button>
+                            <input type="number" id="qtyInput" value="1" min="1" max="10">
+                            <button onclick="changeQty(1)">+</button>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary btn-block" id="addToCartBtn" onclick="addToCartDetail()">
+                        Add to Bag
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== FOOTER ========== -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2026 Luxe Beauty. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <div class="toast" id="toast"></div>
+
+    <!-- ========== SCRIPTS ========== -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+
+    <script src="js/firebase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/products.js"></script>
+    <script src="js/cart.js"></script>
+
+    <script>
+        // ============================================================
+        // PRODUCT DETAIL PAGE LOGIC
+        // ============================================================
+
+        let productData = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await Auth.init();
+
+            // Get product ID from URL
+            const params = new URLSearchParams(window.location.search);
+            const productId = params.get('id');
+
+            if (!productId) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            productData = await Products.getById(productId);
+
+            if (!productData) {
+                document.getElementById('loadingState').innerHTML = 'Product not found.';
+                return;
+            }
+
+            // Display the product
+            const icon = productData.category === 'Lipstick' ? 'fa-lipstick'
+                       : productData.category === 'Eyeliner' ? 'fa-pen-nib' : 'fa-eye';
+
+            document.getElementById('productImage').innerHTML = productData.imageUrl
+                ? `<img src="${productData.imageUrl}" alt="${productData.name}">`
+                : `<div class="placeholder-img" style="background: linear-gradient(135deg, ${productData.shadeCode}30 0%, ${productData.shadeCode}10 100%); width:100%; height:100%;">
+                     <i class="fas ${icon}" style="font-size:5rem; color:${productData.shadeCode}; opacity:0.6;"></i>
+                   </div>`;
+
+            document.getElementById('productName').textContent = productData.name;
+            document.getElementById('productShade').textContent = `Shade: ${productData.shadeCode}`;
+            document.getElementById('productPrice').textContent = `$${productData.price.toFixed(2)}`;
+            document.getElementById('productCategory').textContent = `Category: ${productData.category}`;
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('productContent').style.display = 'grid';
+        });
+
+        function changeQty(delta) {
+            const input = document.getElementById('qtyInput');
+            let val = parseInt(input.value) + delta;
+            if (val < 1) val = 1;
+            if (val > 10) val = 10;
+            input.value = val;
+        }
+
+        async function addToCartDetail() {
+            const user = Auth.currentUser;
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            if (!productData) return;
+
+            const qty = parseInt(document.getElementById('qtyInput').value);
+
+            await Cart.addItem(user.uid, {
+                productId: productData.id,
+                name: productData.name,
+                price: productData.price,
+                shadeCode: productData.shadeCode,
+                category: productData.category,
+                imageUrl: productData.imageUrl || '',
+                quantity: qty
+            });
+
+            showToast('Added to bag!', 'success');
+        }
+
+        function showToast(message, type = '') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast ' + type + ' show';
+            setTimeout(() => { toast.className = 'toast'; }, 2500);
+        }
+    </script>
+</body>
+</html>

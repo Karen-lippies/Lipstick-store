@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout — Luxe Beauty</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- ========== HEADER ========== -->
+    <header class="header">
+        <div class="container">
+            <div class="header-inner">
+                <a href="index.html" class="logo"><i class="fas fa-lipstick"></i> LUXE BEAUTY</a>
+                <ul class="nav-links">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="tryon.html">Virtual Try-On</a></li>
+                    <li><a href="index.html#products">Shop</a></li>
+                </ul>
+                <div class="nav-icons">
+                    <a href="cart.html"><i class="fas fa-shopping-bag"></i></a>
+                    <a href="login.html"><i class="fas fa-user"></i></a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ========== CHECKOUT PAGE ========== -->
+    <section class="checkout-page">
+        <div class="container">
+            <h1>Checkout</h1>
+
+            <!-- Loading state -->
+            <div class="loading-page" id="loadingState"><div class="spinner"></div> Loading...</div>
+
+            <!-- Checkout content -->
+            <div id="checkoutContent" style="display:none;">
+                <div class="checkout-grid">
+                    <!-- LEFT: Delivery Form -->
+                    <div class="checkout-form-card">
+                        <h2><i class="fas fa-truck"></i> Delivery Address</h2>
+                        <form id="checkoutForm">
+                            <div class="form-group">
+                                <label for="fullName">Full Name</label>
+                                <input type="text" id="fullName" placeholder="John Doe" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="phone">Phone Number</label>
+                                <input type="tel" id="phone" placeholder="+1 234 567 8900" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="address">Full Address</label>
+                                <textarea id="address" rows="3" placeholder="Street address, apartment, suite, etc." required></textarea>
+                            </div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+                                <div class="form-group">
+                                    <label for="city">City</label>
+                                    <input type="text" id="city" placeholder="New York" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="state">State</label>
+                                    <input type="text" id="state" placeholder="NY" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="pincode">Pincode / ZIP</label>
+                                <input type="text" id="pincode" placeholder="10001" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label><input type="checkbox" id="saveAddress" checked> Save this address to my profile</label>
+                            </div>
+
+                            <hr style="margin:20px 0; border:none; border-top:1px solid #eee;">
+
+                            <h2><i class="fas fa-credit-card"></i> Payment</h2>
+                            <div style="background:#f5f5f5; padding:20px; border-radius:8px; text-align:center; margin-top:12px;">
+                                <i class="fas fa-lock" style="font-size:1.5rem; color:var(--primary); margin-bottom:8px; display:block;"></i>
+                                <p style="font-weight:500; margin-bottom:8px;">Payment Gateway Coming Soon</p>
+                                <p style="font-size:0.85rem; color:var(--text-light);">Razorpay / Stripe integration will be added here.</p>
+                            </div>
+
+                            <!-- TODO: Replace with actual payment gateway -->
+                            <button type="submit" class="btn btn-primary btn-block" style="margin-top:24px;" id="placeOrderBtn">
+                                <i class="fas fa-lock"></i> Place Order
+                            </button>
+
+                            <p style="text-align:center; font-size:0.8rem; color:var(--text-light); margin-top:12px;">
+                                <i class="fas fa-info-circle"></i> TODO: Integrate Razorpay or Stripe for real payments
+                            </p>
+                        </form>
+                    </div>
+
+                    <!-- RIGHT: Order Summary -->
+                    <div class="order-summary-card">
+                        <h2>Order Summary</h2>
+                        <div id="orderItems"></div>
+                        <div class="order-total">
+                            <span>Total</span>
+                            <span id="orderTotal">$0.00</span>
+                        </div>
+                        <p style="font-size:0.85rem; color:var(--text-light); margin-top:14px;">
+                            <i class="fas fa-truck"></i> Free shipping on orders over $50
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== FOOTER ========== -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2026 Luxe Beauty. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <div class="toast" id="toast"></div>
+
+    <!-- ========== SCRIPTS ========== -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+
+    <script src="js/firebase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/products.js"></script>
+    <script src="js/cart.js"></script>
+
+    <script>
+        // ============================================================
+        // CHECKOUT PAGE LOGIC
+        // ============================================================
+
+        let checkoutCartItems = [];
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Must be logged in to checkout
+            const user = await Auth.requireAuth();
+            if (!user) return;
+
+            // Load cart
+            checkoutCartItems = await Cart.getItems(user.uid);
+
+            if (checkoutCartItems.length === 0) {
+                window.location.href = 'cart.html';
+                return;
+            }
+
+            // Load saved address if exists
+            const profile = await Auth.getProfile(user.uid);
+            if (profile && profile.address) {
+                document.getElementById('fullName').value = profile.name || '';
+                document.getElementById('phone').value = profile.phone || '';
+                document.getElementById('address').value = profile.address.street || '';
+                document.getElementById('city').value = profile.address.city || '';
+                document.getElementById('state').value = profile.address.state || '';
+                document.getElementById('pincode').value = profile.address.pincode || '';
+            } else {
+                document.getElementById('fullName').value = profile?.name || '';
+                document.getElementById('phone').value = profile?.phone || '';
+            }
+
+            // Render order summary
+            renderOrderSummary();
+
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('checkoutContent').style.display = 'block';
+        });
+
+        function renderOrderSummary() {
+            const container = document.getElementById('orderItems');
+            const total = Cart.calculateTotal(checkoutCartItems);
+
+            container.innerHTML = checkoutCartItems.map(item => `
+                <div class="order-item">
+                    <span>${item.name} x${item.quantity}</span>
+                    <span>$${(item.price * item.quantity).toFixed(2)}</span>
+                </div>
+            `).join('');
+
+            document.getElementById('orderTotal').textContent = `$${total.toFixed(2)}`;
+        }
+
+        // Handle form submit
+        document.getElementById('checkoutForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const user = Auth.currentUser;
+            if (!user) return;
+
+            const btn = document.getElementById('placeOrderBtn');
+            btn.textContent = 'Processing...';
+            btn.disabled = true;
+
+            // Save address to profile
+            const saveAddress = document.getElementById('saveAddress').checked;
+            if (saveAddress) {
+                await Auth.updateProfile(user.uid, {
+                    address: {
+                        street: document.getElementById('address').value.trim(),
+                        city: document.getElementById('city').value.trim(),
+                        state: document.getElementById('state').value.trim(),
+                        pincode: document.getElementById('pincode').value.trim()
+                    }
+                });
+            }
+
+            // Save order to Firestore
+            try {
+                await db.collection('orders').add({
+                    userId: user.uid,
+                    items: checkoutCartItems,
+                    total: Cart.calculateTotal(checkoutCartItems),
+                    address: {
+                        name: document.getElementById('fullName').value.trim(),
+                        phone: document.getElementById('phone').value.trim(),
+                        street: document.getElementById('address').value.trim(),
+                        city: document.getElementById('city').value.trim(),
+                        state: document.getElementById('state').value.trim(),
+                        pincode: document.getElementById('pincode').value.trim()
+                    },
+                    status: 'pending',
+                    paymentStatus: 'TODO_integrate_gateway',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                // Clear cart
+                await Cart.clear(user.uid);
+
+                showToast('Order placed successfully! (Payment pending gateway integration)', 'success');
+
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 2000);
+
+            } catch (error) {
+                showToast('Error placing order. Please try again.', 'error');
+                btn.textContent = 'Place Order';
+                btn.disabled = false;
+            }
+        });
+
+        function showToast(message, type = '') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast ' + type + ' show';
+            setTimeout(() => { toast.className = 'toast'; }, 3000);
+        }
+    </script>
+</body>
+</html>
