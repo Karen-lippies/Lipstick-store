@@ -152,17 +152,14 @@
     <div class="toast" id="toast"></div>
 
     <!-- ========== SCRIPTS ========== -->
-    <!-- Firebase SDK (free Spark plan) -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <!-- Supabase (free): auth + database + storage -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <!-- App modules -->
-    <script src="js/firebase-config.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/products.js"></script>
-    <script src="js/cart.js"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/supabase-auth.js"></script>
+    <script src="js/supabase-products.js"></script>
+    <script src="js/supabase-cart.js"></script>
 
     <script>
         // ============================================================
@@ -192,19 +189,19 @@
             grid.innerHTML = products.map(product => `
                 <div class="product-card">
                     <a href="product.html?id=${product.id}">
-                        <div class="product-image" style="background: linear-gradient(135deg, ${product.shadeCode}30 0%, ${product.shadeCode}10 100%);">
-                            ${product.imageUrl
-                                ? `<img src="${product.imageUrl}" alt="${product.name}">`
-                                : `<div class="placeholder-img" style="background-color:${product.shadeCode}20;">
-                                     <i class="fas ${product.category === 'Lipstick' ? 'fa-lipstick' : product.category === 'Eyeliner' ? 'fa-pen-nib' : 'fa-eye'}" style="color:${product.shadeCode};"></i>
+                        <div class="product-image" style="background: linear-gradient(135deg, ${product.shade_code}30 0%, ${product.shade_code}10 100%);">
+                            ${product.image_url
+                                ? `<img src="${product.image_url}" alt="${product.name}">`
+                                : `<div class="placeholder-img" style="background-color:${product.shade_code}20;">
+                                     <i class="fas ${product.category === 'Lipstick' ? 'fa-lipstick' : product.category === 'Eyeliner' ? 'fa-pen-nib' : 'fa-eye'}" style="color:${product.shade_code};"></i>
                                    </div>`
                             }
                         </div>
                     </a>
                     <div class="product-info">
                         <h3>${product.name}</h3>
-                        <p class="shade-name">${product.shadeCode}</p>
-                        <p class="price">$${product.price.toFixed(2)}</p>
+                        <p class="shade-name">${product.shade_code}</p>
+                        <p class="price">$${Number(product.price).toFixed(2)}</p>
                         <button class="btn btn-primary btn-block" onclick="addToCartFromHome('${product.id}')">Add to Bag</button>
                     </div>
                 </div>
@@ -230,13 +227,13 @@
             const product = allProducts.find(p => p.id === productId);
             if (!product) return;
 
-            await Cart.addItem(user.uid, {
+            await Cart.addItem(user.id, {
                 productId: product.id,
                 name: product.name,
                 price: product.price,
-                shadeCode: product.shadeCode,
+                shadeCode: product.shade_code,
                 category: product.category,
-                imageUrl: product.imageUrl || '',
+                imageUrl: product.image_url || '',
                 quantity: 1
             });
 
@@ -252,7 +249,7 @@
                 badge.style.display = 'none';
                 return;
             }
-            const items = await Cart.getItems(user.uid);
+            const items = await Cart.getItems(user.id);
             const count = Cart.getCount(items);
             if (count > 0) {
                 badge.textContent = count;

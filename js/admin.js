@@ -1,5 +1,6 @@
 // ============================================================
-// ADMIN MODULE — product management for the admin panel
+// ADMIN MODULE — Supabase version
+// Product management for the admin panel
 // ============================================================
 
 const Admin = {
@@ -31,18 +32,18 @@ const Admin = {
         grid.innerHTML = products.map(product => `
             <div class="admin-product-card">
                 <div class="admin-product-image">
-                    ${product.imageUrl 
-                        ? `<img src="${product.imageUrl}" alt="${product.name}">` 
-                        : `<div class="placeholder-img" style="background-color: ${product.shadeCode}20;">
-                             <i class="fas fa-eye" style="color: ${product.shadeCode};"></i>
+                    ${product.image_url
+                        ? `<img src="${product.image_url}" alt="${product.name}">`
+                        : `<div class="placeholder-img" style="background-color: ${product.shade_code}20;">
+                             <i class="fas fa-eye" style="color: ${product.shade_code};"></i>
                            </div>`
                     }
                 </div>
                 <div class="admin-product-info">
                     <h4>${product.name}</h4>
-                    <p><span class="shade-dot" style="background:${product.shadeCode};"></span> ${product.shadeCode}</p>
+                    <p><span class="shade-dot" style="background:${product.shade_code};"></span> ${product.shade_code}</p>
                     <p class="product-category-tag">${product.category}</p>
-                    <p class="admin-product-price">$${product.price.toFixed(2)}</p>
+                    <p class="admin-product-price">$${Number(product.price).toFixed(2)}</p>
                 </div>
                 <div class="admin-product-actions">
                     <button class="btn-edit" onclick="Admin.editProduct('${product.id}')">
@@ -91,15 +92,17 @@ const Admin = {
 
         try {
             let imageUrl = '';
+            let tempId = this.editingProductId || Date.now().toString();
 
             // Upload image if provided
             if (imageFile) {
-                const tempId = Date.now().toString();
                 const uploadResult = await Products.uploadImage(imageFile, tempId);
                 if (uploadResult.success) {
                     imageUrl = uploadResult.url;
                 } else {
                     this.showMessage('Image upload failed: ' + uploadResult.error, 'error');
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
                     return;
                 }
             }
@@ -114,11 +117,10 @@ const Admin = {
 
             let result;
             if (this.editingProductId) {
-                // Update existing product
+                // Keep old image if no new image uploaded
                 if (!imageUrl) {
-                    // Keep old image if no new image uploaded
                     const existing = await Products.getById(this.editingProductId);
-                    productData.imageUrl = existing ? existing.imageUrl : '';
+                    productData.imageUrl = existing ? existing.image_url : '';
                 }
                 result = await Products.update(this.editingProductId, productData);
                 this.showMessage('Product updated successfully!', 'success');
@@ -126,20 +128,22 @@ const Admin = {
                 document.getElementById('formTitle').textContent = 'Add New Product';
                 submitBtn.textContent = 'Add Product';
             } else {
-                // Add new product
                 result = await Products.add(productData);
                 this.showMessage('Product added successfully!', 'success');
+                submitBtn.textContent = 'Add Product';
             }
 
             if (result.success) {
                 e.target.reset();
                 document.getElementById('shadePreview').style.backgroundColor = '#ccc';
+                document.getElementById('productShade').value = '#c0392b';
+                document.getElementById('productShadeText').value = '#c0392b';
                 this.loadProducts();
             } else {
                 this.showMessage('Error: ' + result.error, 'error');
             }
         } catch (error) {
-            this.showMessage('An error occurred', 'error');
+            this.showMessage('An error occurred: ' + error.message, 'error');
         }
 
         submitBtn.textContent = originalText;
@@ -158,9 +162,10 @@ const Admin = {
         document.getElementById('formTitle').textContent = 'Edit Product';
         document.getElementById('productName').value = product.name;
         document.getElementById('productCategory').value = product.category;
-        document.getElementById('productShade').value = product.shadeCode;
+        document.getElementById('productShade').value = product.shade_code;
+        document.getElementById('productShadeText').value = product.shade_code;
         document.getElementById('productPrice').value = product.price;
-        document.getElementById('shadePreview').style.backgroundColor = product.shadeCode;
+        document.getElementById('shadePreview').style.backgroundColor = product.shade_code;
 
         const submitBtn = document.querySelector('#productForm button[type="submit"]');
         submitBtn.textContent = 'Update Product';
@@ -180,7 +185,7 @@ const Admin = {
             this.showMessage('Product deleted', 'success');
             this.loadProducts();
         } else {
-            this.showMessage('Error deleting product', 'error');
+            this.showMessage('Error deleting product: ' + result.error, 'error');
         }
     },
 

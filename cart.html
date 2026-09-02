@@ -69,15 +69,12 @@
     <div class="toast" id="toast"></div>
 
     <!-- ========== SCRIPTS ========== -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <script src="js/firebase-config.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/products.js"></script>
-    <script src="js/cart.js"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/supabase-auth.js"></script>
+    <script src="js/supabase-products.js"></script>
+    <script src="js/supabase-cart.js"></script>
 
     <script>
         // ============================================================
@@ -89,7 +86,7 @@
         document.addEventListener('DOMContentLoaded', async () => {
             const user = await Auth.requireAuth();
             if (!user) return;
-            await loadCart(user.uid);
+            await loadCart(user.id);
         });
 
         async function loadCart(userId) {
@@ -117,20 +114,20 @@
                 return `
                     <div class="cart-item">
                         <div class="cart-item-image">
-                            ${item.imageUrl
-                                ? `<img src="${item.imageUrl}" alt="${item.name}">`
-                                : `<div class="mini-placeholder" style="background-color:${item.shadeCode}20;">
-                                     <i class="fas ${icon}" style="color:${item.shadeCode};"></i>
+                            ${item.image_url
+                                ? `<img src="${item.image_url}" alt="${item.name}">`
+                                : `<div class="mini-placeholder" style="background-color:${item.shade_code}20;">
+                                     <i class="fas ${icon}" style="color:${item.shade_code};"></i>
                                    </div>`
                             }
                         </div>
                         <div class="cart-item-details">
                             <h3>${item.name}</h3>
-                            <p class="shade-text">Shade: ${item.shadeCode} &middot; Qty: ${item.quantity}</p>
+                            <p class="shade-text">Shade: ${item.shade_code} &middot; Qty: ${item.quantity}</p>
                         </div>
                         <div class="cart-item-actions">
                             <span class="item-price">$${(item.price * item.quantity).toFixed(2)}</span>
-                            <button class="remove-btn" onclick="removeItem('${item.productId}')">
+                            <button class="remove-btn" onclick="removeItem('${item.product_id}')">
                                 <i class="fas fa-trash-alt"></i> Remove
                             </button>
                         </div>
@@ -145,8 +142,8 @@
             const user = Auth.currentUser;
             if (!user) return;
 
-            await Cart.removeItem(user.uid, productId);
-            cartItems = cartItems.filter(i => i.productId !== productId);
+            await Cart.removeItem(user.id, productId);
+            cartItems = cartItems.filter(i => i.product_id !== productId);
 
             if (cartItems.length === 0) {
                 document.getElementById('cartContent').style.display = 'none';

@@ -1,5 +1,6 @@
 // ============================================================
-// CART MODULE — manages shopping cart in Firestore
+// CART MODULE — Supabase version
+// Manages shopping cart items in the "cart_items" table
 // ============================================================
 
 const Cart = {
@@ -8,13 +9,15 @@ const Cart = {
     // --------------------------------------------------------
     async getItems(userId) {
         try {
-            const doc = await db.collection('carts').doc(userId).get();
-            if (doc.exists) {
-                return doc.data().items || [];
-            }
-            return [];
+            const { data, error } = await sb
+                .from('cart_items')
+                .select('*')
+                .eq('user_id', userId);
+
+            if (error) throw error;
+            return data || [];
         } catch (error) {
-            console.error("Error getting cart:", error);
+            console.error("Get cart error:", error);
             return [];
         }
     },
@@ -25,31 +28,34 @@ const Cart = {
     // --------------------------------------------------------
     async addItem(userId, item) {
         try {
-            const cartRef = db.collection('carts').doc(userId);
-            const doc = await cartRef.get();
+            // Check if this product is already in the cart
+            const existing = await this.getItems(userId);
+            const found = existing.find(i => i.product_id === item.productId);
 
-            let items = [];
-            if (doc.exists) {
-                items = doc.data().items || [];
-            }
-
-            // Check if product already in cart
-            const existingIndex = items.findIndex(i => i.productId === item.productId);
-            if (existingIndex >= 0) {
-                items[existingIndex].quantity += item.quantity || 1;
+            if (found) {
+                // Update quantity
+                const { error } = await sb
+                    .from('cart_items')
+                    .update({ quantity: (found.quantity || 1) + (item.quantity || 1) })
+                    .eq('id', found.id);
+                if (error) throw error;
             } else {
-                items.push({
-                    productId: item.productId,
-                    name: item.name,
-                    price: item.price,
-                    shadeCode: item.shadeCode,
-                    category: item.category,
-                    imageUrl: item.imageUrl || '',
-                    quantity: item.quantity || 1
-                });
+                // Insert new row
+                const { error } = await sb
+                    .from('cart_items')
+                    .insert([{
+                        user_id: userId,
+                        product_id: item.productId,
+                        name: item.name,
+                        price: item.price,
+                        shade_code: item.shadeCode,
+                        category: item.category,
+                        image_url: item.imageUrl || '',
+                        quantity: item.quantity || 1
+                    }]);
+                if (error) throw error;
             }
 
-            await cartRef.set({ items: items });
             return { success: true };
         } catch (error) {
             return { success: false, error: error.message };
@@ -57,27 +63,21 @@ const Cart = {
     },
 
     // --------------------------------------------------------
-    // Update item quantity
+    // Update item quantity (delete if quantity is 0)
     // --------------------------------------------------------
     async updateQuantity(userId, productId, quantity) {
         try {
-            const cartRef = db.collection('carts').doc(userId);
-            const doc = await cartRef.get();
-
-            if (!doc.exists) return { success: false };
-
-            let items = doc.data().items || [];
-            const index = items.findIndex(i => i.productId === productId);
-
-            if (index >= 0) {
-                if (quantity <= 0) {
-                    items.splice(index, 1);
-                } else {
-                    items[index].quantity = quantity;
-                }
+            if (quantity <= 0) {
+                return await this.removeItem(userId, productId);
             }
 
-            await cartRef.set({ items: items });
+            const { error } = await sb
+                .from('cart_items')
+                .update({ quantity })
+                .eq('user_id', userId)
+                .eq('product_id', productId);
+
+            if (error) throw error;
             return { success: true };
         } catch (error) {
             return { success: false, error: error.message };
@@ -89,15 +89,13 @@ const Cart = {
     // --------------------------------------------------------
     async removeItem(userId, productId) {
         try {
-            const cartRef = db.collection('carts').doc(userId);
-            const doc = await cartRef.get();
+            const { error } = await sb
+                .from('cart_items')
+                .delete()
+                .eq('user_id', userId)
+                .eq('product_id', productId);
 
-            if (!doc.exists) return { success: false };
-
-            let items = doc.data().items || [];
-            items = items.filter(i => i.productId !== productId);
-
-            await cartRef.set({ items: items });
+            if (error) throw error;
             return { success: true };
         } catch (error) {
             return { success: false, error: error.message };
@@ -109,7 +107,12 @@ const Cart = {
     // --------------------------------------------------------
     async clear(userId) {
         try {
-            await db.collection('carts').doc(userId).set({ items: [] });
+            const { error } = await sb
+                .from('cart_items')
+                .delete()
+                .eq('user_id', userId);
+
+            if (error) throw error;
             return { success: true };
         } catch (error) {
             return { success: false, error: error.message };

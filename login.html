@@ -70,13 +70,10 @@
     </div>
 
     <!-- ========== SCRIPTS ========== -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <script src="js/firebase-config.js"></script>
-    <script src="js/auth.js"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/supabase-auth.js"></script>
 
     <script>
         // ============================================================
@@ -112,7 +109,7 @@
 
             if (result.success) {
                 // Check if admin
-                const isAdmin = await Auth.checkAdmin(result.user.uid);
+                const isAdmin = await Auth.checkAdmin(result.user.id);
                 if (isAdmin) {
                     window.location.href = 'admin.html';
                 } else {
@@ -156,13 +153,13 @@
             }
         });
 
-        // --- Format Firebase error messages to be beginner-friendly ---
+        // --- Format Supabase error messages to be beginner-friendly ---
         function formatError(error) {
-            if (error.includes('auth/user-not-found')) return 'No account found with this email.';
-            if (error.includes('auth/wrong-password')) return 'Incorrect password. Please try again.';
-            if (error.includes('auth/email-already-in-use')) return 'This email is already registered. Try logging in.';
-            if (error.includes('auth/invalid-email')) return 'Please enter a valid email address.';
-            if (error.includes('auth/weak-password')) return 'Password must be at least 6 characters.';
+            const e = error.toLowerCase();
+            if (e.includes('invalid login credentials')) return 'Incorrect email or password. Please try again.';
+            if (e.includes('user already registered') || e.includes('already registered')) return 'This email is already registered. Try logging in.';
+            if (e.includes('password should be at least 6 characters')) return 'Password must be at least 6 characters.';
+            if (e.includes('email is not allowed')) return 'Please use a valid email address.';
             return error;
         }
 

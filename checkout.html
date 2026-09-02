@@ -123,15 +123,12 @@
     <div class="toast" id="toast"></div>
 
     <!-- ========== SCRIPTS ========== -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <script src="js/firebase-config.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/products.js"></script>
-    <script src="js/cart.js"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/supabase-auth.js"></script>
+    <script src="js/supabase-products.js"></script>
+    <script src="js/supabase-cart.js"></script>
 
     <script>
         // ============================================================
@@ -146,25 +143,25 @@
             if (!user) return;
 
             // Load cart
-            checkoutCartItems = await Cart.getItems(user.uid);
+            checkoutCartItems = await Cart.getItems(user.id);
 
             if (checkoutCartItems.length === 0) {
                 window.location.href = 'cart.html';
                 return;
             }
 
-            // Load saved address if exists
-            const profile = await Auth.getProfile(user.uid);
-            if (profile && profile.address) {
+            // Load saved address + name/phone from profile
+            const profile = await Auth.getProfile(user.id);
+            if (profile) {
                 document.getElementById('fullName').value = profile.name || '';
                 document.getElementById('phone').value = profile.phone || '';
-                document.getElementById('address').value = profile.address.street || '';
-                document.getElementById('city').value = profile.address.city || '';
-                document.getElementById('state').value = profile.address.state || '';
-                document.getElementById('pincode').value = profile.address.pincode || '';
-            } else {
-                document.getElementById('fullName').value = profile?.name || '';
-                document.getElementById('phone').value = profile?.phone || '';
+
+                if (profile.address) {
+                    document.getElementById('address').value = profile.address.street || '';
+                    document.getElementById('city').value = profile.address.city || '';
+                    document.getElementById('state').value = profile.address.state || '';
+                    document.getElementById('pincode').value = profile.address.pincode || '';
+                }
             }
 
             // Render order summary
@@ -198,40 +195,37 @@
             btn.textContent = 'Processing...';
             btn.disabled = true;
 
-            // Save address to profile
-            const saveAddress = document.getElementById('saveAddress').checked;
-            if (saveAddress) {
-                await Auth.updateProfile(user.uid, {
-                    address: {
-                        street: document.getElementById('address').value.trim(),
-                        city: document.getElementById('city').value.trim(),
-                        state: document.getElementById('state').value.trim(),
-                        pincode: document.getElementById('pincode').value.trim()
-                    }
-                });
+            const addressData = {
+                street: document.getElementById('address').value.trim(),
+                city: document.getElementById('city').value.trim(),
+                state: document.getElementById('state').value.trim(),
+                pincode: document.getElementById('pincode').value.trim()
+            };
+
+            // Save address to profile if checked
+            if (document.getElementById('saveAddress').checked) {
+                await Auth.updateProfile(user.id, { address: addressData });
             }
 
-            // Save order to Firestore
             try {
-                await db.collection('orders').add({
-                    userId: user.uid,
+                // Save order to "orders" table
+                const { error } = await sb.from('orders').insert([{
+                    user_id: user.id,
                     items: checkoutCartItems,
                     total: Cart.calculateTotal(checkoutCartItems),
                     address: {
                         name: document.getElementById('fullName').value.trim(),
                         phone: document.getElementById('phone').value.trim(),
-                        street: document.getElementById('address').value.trim(),
-                        city: document.getElementById('city').value.trim(),
-                        state: document.getElementById('state').value.trim(),
-                        pincode: document.getElementById('pincode').value.trim()
+                        ...addressData
                     },
                     status: 'pending',
-                    paymentStatus: 'TODO_integrate_gateway',
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
+                    payment_status: 'TODO_integrate_gateway'
+                }]);
+
+                if (error) throw error;
 
                 // Clear cart
-                await Cart.clear(user.uid);
+                await Cart.clear(user.id);
 
                 showToast('Order placed successfully! (Payment pending gateway integration)', 'success');
 

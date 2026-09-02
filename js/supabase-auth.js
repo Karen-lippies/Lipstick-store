@@ -1,10 +1,10 @@
 // ============================================================
-// AUTH MODULE — handles signup, login, logout, session
+// AUTH MODULE — Supabase version
+// Handles signup, login, logout, session, admin check
 // ============================================================
 
 const Auth = {
-    // Current logged-in user data
-    currentUser: null,
+    currentUser: null,   // Supabase user object
     isAdmin: false,
 
     // --------------------------------------------------------
@@ -12,20 +12,33 @@ const Auth = {
     // --------------------------------------------------------
     async signup(name, email, phone, password) {
         try {
-            // Create user in Firebase Auth
-            const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-            const user = userCredential.user;
-
-            // Save extra profile data in Firestore
-            await db.collection('users').doc(user.uid).set({
-                name: name,
+            // Create user in Supabase Auth
+            const { data, error } = await sb.auth.signUp({
                 email: email,
-                phone: phone,
-                isAdmin: false,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                password: password,
+                options: {
+                    data: { full_name: name, phone: phone }
+                }
             });
 
-            return { success: true, user: user };
+            if (error) throw error;
+
+            // If a user was created, save profile in "profiles" table
+            if (data.user) {
+                const { error: profileError } = await sb
+                    .from('profiles')
+                    .upsert({
+                        id: data.user.id,
+                        name: name,
+                        email: email,
+                        phone: phone,
+                        is_admin: false
+                    });
+
+                if (profileError) throw profileError;
+            }
+
+            return { success: true, user: data.user };
         } catch (error) {
             return { success: false, error: error.message };
         }
@@ -36,8 +49,9 @@ const Auth = {
     // --------------------------------------------------------
     async login(email, password) {
         try {
-            const userCredential = await auth.signInWithEmailAndPassword(email, password);
-            return { success: true, user: userCredential.user };
+            const { data, error } = await sb.auth.signInWithPassword({ email, password });
+            if (error) throw error;
+            return { success: true, user: data.user };
         } catch (error) {
             return { success: false, error: error.message };
         }
@@ -47,39 +61,46 @@ const Auth = {
     // Log out
     // --------------------------------------------------------
     async logout() {
-        await auth.signOut();
+        await sb.auth.signOut();
         this.currentUser = null;
         this.isAdmin = false;
         window.location.href = 'login.html';
     },
 
     // --------------------------------------------------------
-    // Check if current user is admin
-    // -------------------------------------------------------
+    // Check if a user is admin (reads from profiles table)
+    // --------------------------------------------------------
     async checkAdmin(uid) {
         try {
-            const doc = await db.collection('users').doc(uid).get();
-            if (doc.exists && doc.data().isAdmin === true) {
-                return true;
-            }
-            return false;
+            const { data, error } = await sb
+                .from('profiles')
+                .select('is_admin')
+                .eq('id', uid)
+                .maybeSingle();
+
+            if (error) throw error;
+            return data && data.is_admin === true;
         } catch (error) {
+            console.error("Admin check error:", error);
             return false;
         }
     },
 
     // --------------------------------------------------------
-    // Get user profile from Firestore
+    // Get user profile from "profiles" table
     // --------------------------------------------------------
     async getProfile(uid) {
         try {
-            const doc = await db.collection('users').doc(uid).get();
-            if (doc.exists) {
-                return { id: doc.id, ...doc.data() };
-            }
-            return null;
+            const { data, error } = await sb
+                .from('profiles')
+                .select('*')
+                .eq('id', uid)
+                .maybeSingle();
+
+            if (error) throw error;
+            return data;
         } catch (error) {
-            console.error("Error getting profile:", error);
+            console.error("Get profile error:", error);
             return null;
         }
     },
@@ -87,9 +108,14 @@ const Auth = {
     // --------------------------------------------------------
     // Update user profile
     // --------------------------------------------------------
-    async updateProfile(uid, data) {
+    async updateProfile(uid, updates) {
         try {
-            await db.collection('users').doc(uid).update(data);
+            const { error } = await sb
+                .from('profiles')
+                .update(updates)
+                .eq('id', uid);
+
+            if (error) throw error;
             return { success: true };
         } catch (error) {
             return { success: false, error: error.message };
@@ -97,21 +123,23 @@ const Auth = {
     },
 
     // --------------------------------------------------------
-    // Listen for auth state changes (auto-login on page load)
+    // Get the current session (call once on page load)
     // --------------------------------------------------------
     init() {
         return new Promise((resolve) => {
-            auth.onAuthStateChanged(async (user) => {
-                if (user) {
-                    this.currentUser = user;
-                    this.isAdmin = await this.checkAdmin(user.uid);
+            const session = sb.auth.getSession();
+            if (session.data && session.data.session) {
+                const user = session.data.session.user;
+                this.currentUser = user;
+                this.checkAdmin(user.id).then((isAdmin) => {
+                    this.isAdmin = isAdmin;
                     resolve(user);
-                } else {
-                    this.currentUser = null;
-                    this.isAdmin = false;
-                    resolve(null);
-                }
-            });
+                });
+            } else {
+                this.currentUser = null;
+                this.isAdmin = false;
+                resolve(null);
+            }
         });
     },
 
@@ -128,7 +156,7 @@ const Auth = {
     },
 
     // --------------------------------------------------------
-    // Require admin — redirect to home if not admin
+    // Require admin — redirect if not admin
     // --------------------------------------------------------
     async requireAdmin() {
         const user = await this.init();

@@ -1,14 +1,12 @@
 # ============================================================
 # .gitignore — tells Git which files to NOT upload to GitHub
 # ============================================================
+# NOTE: Supabase keys (anon key + project URL) are PUBLIC by design —
+# they are safe to commit because data security comes from Row Level
+# Security (RLS) in the database, not from hiding the key.
 
-# Never upload Firebase config with real keys (contains your API secrets)
-js/firebase-config.js
-
-# Don't upload the live site data
-firebase.json
-.firebase/
-*.local
+# Local tooling / working files
+.supabase/
 
 # OS files (Windows/Mac)
 Thumbs.db
@@ -17,4 +15,3 @@ Thumbs.db
 # Logs and temporary files
 *.log
 node_modules/
-.DS_Store
