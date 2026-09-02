@@ -14,6 +14,7 @@ The Next.js app source lives in the `karen-beauty/` project folder (not tracked 
 ## Routes
 
 - `/` — Homepage
+- `/try-on` — Virtual makeup try-on (camera-based, MediaPipe)
 - `/products` — Product listing (filters, sort, pagination)
 - `/products/[id]` — Product detail
 - `/cart` — Shopping bag (coupons: `KAREN10`, `BEAUTY20`, `GLOW15`)
