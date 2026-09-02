@@ -344,7 +344,7 @@ const TryOn = {
         snapCtx.setTransform(1, 0, 0, 1, 0, 0);
         snapCtx.drawImage(this.canvas, 0, 0);
         const link = document.createElement('a');
-        link.download = 'luxe-beauty-tryon-' + Date.now() + '.png';
+        link.download = 'karen-tryon-' + Date.now() + '.png';
         link.href = snapshotCanvas.toDataURL('image/png');
         link.click();
     },
