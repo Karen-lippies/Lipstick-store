@@ -1,14 +1,11 @@
 // ============================================================
 // ADMIN MODULE — Supabase version
-// Product management for the admin panel
+// Product management + Offers for the admin panel
 // ============================================================
 
 const Admin = {
     editingProductId: null,
 
-    // --------------------------------------------------------
-    // Initialize admin panel
-    // --------------------------------------------------------
     async init() {
         const user = await Auth.requireAdmin();
         if (!user) return;
@@ -16,9 +13,6 @@ const Admin = {
         this.setupEventListeners();
     },
 
-    // --------------------------------------------------------
-    // Load all products into the admin grid
-    // --------------------------------------------------------
     async loadProducts() {
         const products = await Products.getAll();
         const grid = document.getElementById('adminProductsGrid');
@@ -29,7 +23,14 @@ const Admin = {
             return;
         }
 
-        grid.innerHTML = products.map(product => `
+        grid.innerHTML = products.map(product => {
+            const saleTag = product.is_on_sale
+                ? `<span style="background:#e74c6f;color:#fff;padding:2px 8px;border-radius:20px;font-size:0.7rem;font-weight:600;margin-left:6px;">SALE ${product.discount_percent}% OFF</span>`
+                : '';
+            const priceHtml = product.is_on_sale && product.original_price
+                ? `<span style="text-decoration:line-through;color:#999;font-size:0.85rem;margin-right:4px;">\u20B9${product.original_price}</span><span class="admin-product-price">\u20B9${product.price}</span>`
+                : `<span class="admin-product-price">\u20B9${product.price}</span>`;
+            return `
             <div class="admin-product-card">
                 <div class="admin-product-image">
                     ${product.image_url
@@ -40,39 +41,33 @@ const Admin = {
                     }
                 </div>
                 <div class="admin-product-info">
-                    <h4>${product.name}</h4>
+                    <h4>${product.name}${saleTag}</h4>
                     <p><span class="shade-dot" style="background:${product.shade_code};"></span> ${product.shade_code}</p>
                     <p class="product-category-tag">${product.category}</p>
-                    <p class="admin-product-price">$${Number(product.price).toFixed(2)}</p>
+                    <p>${priceHtml}</p>
                 </div>
                 <div class="admin-product-actions">
                     <button class="btn-edit" onclick="Admin.editProduct('${product.id}')">
                         <i class="fas fa-edit"></i> Edit
                     </button>
+                    <button class="btn-edit" style="background:#fef0f2;color:#e74c6f;" onclick="Admin.openOfferModal('${product.id}')">
+                        <i class="fas fa-tag"></i> Offer
+                    </button>
                     <button class="btn-delete" onclick="Admin.deleteProduct('${product.id}')">
                         <i class="fas fa-trash"></i> Delete
                     </button>
                 </div>
-            </div>
-        `).join('');
+            </div>`;
+        }).join('');
     },
 
-    // --------------------------------------------------------
-    // Setup event listeners
-    // --------------------------------------------------------
     setupEventListeners() {
         const form = document.getElementById('productForm');
-        if (form) {
-            form.addEventListener('submit', (e) => this.handleSubmit(e));
-        }
+        if (form) form.addEventListener('submit', (e) => this.handleSubmit(e));
     },
 
-    // --------------------------------------------------------
-    // Handle form submit (add or update)
-    // --------------------------------------------------------
     async handleSubmit(e) {
         e.preventDefault();
-
         const name = document.getElementById('productName').value.trim();
         const category = document.getElementById('productCategory').value;
         const shadeCode = document.getElementById('productShade').value;
@@ -84,7 +79,6 @@ const Admin = {
             return;
         }
 
-        // Show loading
         const submitBtn = e.target.querySelector('button[type="submit"]');
         const originalText = submitBtn.textContent;
         submitBtn.textContent = 'Saving...';
@@ -94,7 +88,6 @@ const Admin = {
             let imageUrl = '';
             let tempId = this.editingProductId || Date.now().toString();
 
-            // Upload image if provided
             if (imageFile) {
                 const uploadResult = await Products.uploadImage(imageFile, tempId);
                 if (uploadResult.success) {
@@ -108,28 +101,25 @@ const Admin = {
             }
 
             const productData = {
-                name: name,
-                category: category,
-                shadeCode: shadeCode,
+                name, category, shadeCode,
                 price: parseFloat(price),
-                imageUrl: imageUrl
+                imageUrl
             };
 
             let result;
             if (this.editingProductId) {
-                // Keep old image if no new image uploaded
                 if (!imageUrl) {
                     const existing = await Products.getById(this.editingProductId);
                     productData.imageUrl = existing ? existing.image_url : '';
                 }
                 result = await Products.update(this.editingProductId, productData);
-                this.showMessage('Product updated successfully!', 'success');
+                this.showMessage('Product updated!', 'success');
                 this.editingProductId = null;
                 document.getElementById('formTitle').textContent = 'Add New Product';
                 submitBtn.textContent = 'Add Product';
             } else {
                 result = await Products.add(productData);
-                this.showMessage('Product added successfully!', 'success');
+                this.showMessage('Product added!', 'success');
                 submitBtn.textContent = 'Add Product';
             }
 
@@ -150,15 +140,10 @@ const Admin = {
         submitBtn.disabled = false;
     },
 
-    // --------------------------------------------------------
-    // Edit a product — fill the form with existing data
-    // --------------------------------------------------------
     async editProduct(productId) {
         const product = await Products.getById(productId);
         if (!product) return;
-
         this.editingProductId = productId;
-
         document.getElementById('formTitle').textContent = 'Edit Product';
         document.getElementById('productName').value = product.name;
         document.getElementById('productCategory').value = product.category;
@@ -166,32 +151,78 @@ const Admin = {
         document.getElementById('productShadeText').value = product.shade_code;
         document.getElementById('productPrice').value = product.price;
         document.getElementById('shadePreview').style.backgroundColor = product.shade_code;
-
-        const submitBtn = document.querySelector('#productForm button[type="submit"]');
-        submitBtn.textContent = 'Update Product';
-
-        // Scroll to form
+        document.querySelector('#productForm button[type="submit"]').textContent = 'Update Product';
         document.getElementById('productForm').scrollIntoView({ behavior: 'smooth' });
     },
 
-    // --------------------------------------------------------
-    // Delete a product after confirmation
-    // --------------------------------------------------------
     async deleteProduct(productId) {
-        if (!confirm('Are you sure you want to delete this product?')) return;
-
+        if (!confirm('Delete this product?')) return;
         const result = await Products.delete(productId);
         if (result.success) {
             this.showMessage('Product deleted', 'success');
             this.loadProducts();
         } else {
-            this.showMessage('Error deleting product: ' + result.error, 'error');
+            this.showMessage('Error: ' + result.error, 'error');
         }
     },
 
     // --------------------------------------------------------
-    // Show success/error messages
+    // OFFERS MODAL
     // --------------------------------------------------------
+    async openOfferModal(productId) {
+        const product = await Products.getById(productId);
+        if (!product) return;
+
+        const modal = document.getElementById('offerModal');
+        document.getElementById('offerProductId').value = productId;
+        document.getElementById('offerProductName').textContent = product.name;
+        document.getElementById('offerOriginalPrice').value = product.original_price || product.price;
+        document.getElementById('offerDiscount').value = product.discount_percent || 0;
+        document.getElementById('offerIsOnSale').checked = product.is_on_sale || false;
+        document.getElementById('offerText').value = product.offer_text || '';
+        this.updateOfferPreview();
+        modal.style.display = 'flex';
+    },
+
+    closeOfferModal() {
+        document.getElementById('offerModal').style.display = 'none';
+    },
+
+    updateOfferPreview() {
+        const orig = parseFloat(document.getElementById('offerOriginalPrice').value) || 0;
+        const disc = parseFloat(document.getElementById('offerDiscount').value) || 0;
+        const sale = document.getElementById('offerIsOnSale').checked;
+        const preview = document.getElementById('offerPreview');
+        if (!preview) return;
+        if (sale && disc > 0) {
+            const salePrice = Math.round(orig * (1 - disc / 100));
+            preview.innerHTML = `<span style="text-decoration:line-through;color:#999;">\u20B9${orig}</span> <span style="color:#e74c6f;font-weight:700;font-size:1.2rem;">\u20B9${salePrice}</span> <span style="background:#e74c6f;color:#fff;padding:2px 8px;border-radius:20px;font-size:0.75rem;">${disc}% OFF</span>`;
+            preview.style.display = 'block';
+        } else {
+            preview.innerHTML = `<span style="font-weight:600;">\u20B9${orig}</span> <span style="color:#999;font-size:0.85rem;">No active sale</span>`;
+            preview.style.display = 'block';
+        }
+    },
+
+    async saveOffer() {
+        const productId = document.getElementById('offerProductId').value;
+        const offerData = {
+            originalPrice: parseFloat(document.getElementById('offerOriginalPrice').value),
+            discountPercent: parseFloat(document.getElementById('offerDiscount').value) || 0,
+            isOnSale: document.getElementById('offerIsOnSale').checked,
+            offerText: document.getElementById('offerText').value.trim()
+        };
+
+        const result = await Products.updateOffer(productId, offerData);
+        if (result.success) {
+            this.closeOfferModal();
+            this.showMessage('Offer updated!', 'success');
+            this.loadProducts();
+        } else {
+            this.showMessage('Error: ' + result.error, 'error');
+        }
+    },
+
     showMessage(text, type) {
         const msg = document.getElementById('adminMessage');
         if (!msg) return;

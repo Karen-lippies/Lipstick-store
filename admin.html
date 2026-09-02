@@ -123,6 +123,33 @@
 
     <div class="toast" id="toast"></div>
 
+    <!-- ========== OFFERS MODAL ========== -->
+    <div id="offerModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;padding:20px;">
+        <div style="background:#fff;border-radius:16px;padding:32px;max-width:460px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.2);position:relative;">
+            <button onclick="Admin.closeOfferModal()" style="position:absolute;top:16px;right:16px;background:none;border:none;font-size:1.3rem;cursor:pointer;color:#999;">&times;</button>
+            <h3 style="font-family:var(--font-display);font-size:1.4rem;margin-bottom:6px;color:var(--plum-deep);">Set Offer / Discount</h3>
+            <p style="color:var(--text-light);font-size:0.88rem;margin-bottom:20px;">Product: <strong id="offerProductName"></strong></p>
+            <input type="hidden" id="offerProductId">
+            <div class="form-group">
+                <label>Original Price (\u20B9)</label>
+                <input type="number" id="offerOriginalPrice" min="1" oninput="Admin.updateOfferPreview()">
+            </div>
+            <div class="form-group">
+                <label>Discount (%)</label>
+                <input type="number" id="offerDiscount" min="0" max="90" value="0" oninput="Admin.updateOfferPreview()">
+            </div>
+            <div class="form-group">
+                <label><input type="checkbox" id="offerIsOnSale" onchange="Admin.updateOfferPreview()"> Put this product on SALE</label>
+            </div>
+            <div class="form-group">
+                <label>Offer Badge Text (optional)</label>
+                <input type="text" id="offerText" placeholder="e.g. Flat 20% Off, Buy 1 Get 1">
+            </div>
+            <div id="offerPreview" style="background:#fdf0f4;padding:16px;border-radius:10px;margin-bottom:20px;display:none;"></div>
+            <button class="btn btn-primary btn-block" onclick="Admin.saveOffer()"><i class="fas fa-check"></i> Save Offer</button>
+        </div>
+    </div>
+
     <!-- ========== SCRIPTS ========== -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 

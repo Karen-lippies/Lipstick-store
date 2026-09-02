@@ -117,7 +117,11 @@
 
             document.getElementById('productName').textContent = productData.name;
             document.getElementById('productShade').textContent = `Shade: ${productData.shade_code}`;
-            document.getElementById('productPrice').textContent = `\u20B9${Number(productData.price).toFixed(0)}`;
+            if (productData.is_on_sale && productData.original_price) {
+                document.getElementById('productPrice').innerHTML = `<span style="text-decoration:line-through;color:var(--text-muted);font-size:1rem;margin-right:8px;">\u20B9${productData.original_price}</span> \u20B9${productData.price} <span style="background:#e74c6f;color:#fff;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:600;margin-left:8px;">${productData.discount_percent}% OFF</span>`;
+            } else {
+                document.getElementById('productPrice').textContent = `\u20B9${Number(productData.price).toFixed(0)}`;
+            }
             document.getElementById('productCategory').textContent = `Category: ${productData.category}`;
             document.getElementById('loadingState').style.display = 'none';
             document.getElementById('productContent').style.display = 'grid';

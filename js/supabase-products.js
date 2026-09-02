@@ -4,16 +4,12 @@
 // ============================================================
 
 const Products = {
-    // --------------------------------------------------------
-    // Get all products (newest first)
-    // --------------------------------------------------------
     async getAll() {
         try {
             const { data, error } = await sb
                 .from('products')
                 .select('*')
                 .order('created_at', { ascending: false });
-
             if (error) throw error;
             return data || [];
         } catch (error) {
@@ -22,9 +18,6 @@ const Products = {
         }
     },
 
-    // --------------------------------------------------------
-    // Get products by category (Lipstick, Eyeshadow, Eyeliner)
-    // --------------------------------------------------------
     async getByCategory(category) {
         try {
             const { data, error } = await sb
@@ -32,7 +25,6 @@ const Products = {
                 .select('*')
                 .eq('category', category)
                 .order('created_at', { ascending: false });
-
             if (error) throw error;
             return data || [];
         } catch (error) {
@@ -41,9 +33,6 @@ const Products = {
         }
     },
 
-    // --------------------------------------------------------
-    // Get a single product by ID
-    // --------------------------------------------------------
     async getById(productId) {
         try {
             const { data, error } = await sb
@@ -51,7 +40,6 @@ const Products = {
                 .select('*')
                 .eq('id', productId)
                 .maybeSingle();
-
             if (error) throw error;
             return data;
         } catch (error) {
@@ -60,10 +48,21 @@ const Products = {
         }
     },
 
-    // --------------------------------------------------------
-    // Add a new product (admin only)
-    // data = { name, category, shade_code, price, image_url }
-    // --------------------------------------------------------
+    async getOnSale() {
+        try {
+            const { data, error } = await sb
+                .from('products')
+                .select('*')
+                .eq('is_on_sale', true)
+                .order('discount_percent', { ascending: false });
+            if (error) throw error;
+            return data || [];
+        } catch (error) {
+            console.error("Get sale products error:", error);
+            return [];
+        }
+    },
+
     async add(productData) {
         try {
             const { data, error } = await sb
@@ -71,12 +70,15 @@ const Products = {
                 .insert([{
                     name: productData.name,
                     category: productData.category,
-                    shade_code: productData.shadeCode,     // hex color
+                    shade_code: productData.shadeCode,
                     price: parseFloat(productData.price),
-                    image_url: productData.imageUrl || ''
+                    image_url: productData.imageUrl || '',
+                    original_price: parseFloat(productData.price),
+                    discount_percent: 0,
+                    is_on_sale: false,
+                    offer_text: null
                 }])
                 .select();
-
             if (error) throw error;
             return { success: true, id: data[0].id };
         } catch (error) {
@@ -84,22 +86,24 @@ const Products = {
         }
     },
 
-    // --------------------------------------------------------
-    // Update a product (admin only)
-    // --------------------------------------------------------
     async update(productId, productData) {
         try {
+            const updateObj = {
+                name: productData.name,
+                category: productData.category,
+                shade_code: productData.shadeCode,
+                price: parseFloat(productData.price),
+                image_url: productData.imageUrl || ''
+            };
+            if (productData.originalPrice !== undefined) updateObj.original_price = parseFloat(productData.originalPrice);
+            if (productData.discountPercent !== undefined) updateObj.discount_percent = parseFloat(productData.discountPercent);
+            if (productData.isOnSale !== undefined) updateObj.is_on_sale = productData.isOnSale;
+            if (productData.offerText !== undefined) updateObj.offer_text = productData.offerText || null;
+
             const { error } = await sb
                 .from('products')
-                .update({
-                    name: productData.name,
-                    category: productData.category,
-                    shade_code: productData.shadeCode,
-                    price: parseFloat(productData.price),
-                    image_url: productData.imageUrl || ''
-                })
+                .update(updateObj)
                 .eq('id', productId);
-
             if (error) throw error;
             return { success: true };
         } catch (error) {
@@ -107,16 +111,32 @@ const Products = {
         }
     },
 
-    // --------------------------------------------------------
-    // Delete a product (admin only)
-    // --------------------------------------------------------
+    async updateOffer(productId, offerData) {
+        try {
+            const salePrice = offerData.originalPrice * (1 - offerData.discountPercent / 100);
+            const { error } = await sb
+                .from('products')
+                .update({
+                    original_price: offerData.originalPrice,
+                    discount_percent: offerData.discountPercent,
+                    is_on_sale: offerData.isOnSale,
+                    offer_text: offerData.offerText || null,
+                    price: Math.round(salePrice)
+                })
+                .eq('id', productId);
+            if (error) throw error;
+            return { success: true };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    },
+
     async delete(productId) {
         try {
             const { error } = await sb
                 .from('products')
                 .delete()
                 .eq('id', productId);
-
             if (error) throw error;
             return { success: true };
         } catch (error) {
@@ -124,43 +144,29 @@ const Products = {
         }
     },
 
-    // --------------------------------------------------------
-    // Upload product image to Supabase Storage
-    // Returns the public URL
-    // --------------------------------------------------------
     async uploadImage(file, productId) {
         try {
-            // Sanitize the filename
             const ext = file.name.split('.').pop();
             const fileName = `product_${productId}_${Date.now()}.${ext}`;
-
-            // Upload to the "product-images" bucket
             const { error: uploadError } = await sb.storage
                 .from('product-images')
                 .upload(fileName, file);
-
             if (uploadError) throw uploadError;
-
-            // Get the public URL
             const { data } = sb.storage
                 .from('product-images')
                 .getPublicUrl(fileName);
-
             return { success: true, url: data.publicUrl };
         } catch (error) {
             return { success: false, error: error.message };
         }
     },
 
-    // --------------------------------------------------------
-    // Get all unique shades for the Try-On selector
-    // --------------------------------------------------------
     async getAllShades() {
         try {
             const products = await this.getAll();
             return products.map(p => ({
                 name: p.name || '',
-                shadeCode: p.shade_code,     // uses snake_case column
+                shadeCode: p.shade_code,
                 category: p.category,
                 id: p.id
             }));

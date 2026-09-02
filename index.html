@@ -53,7 +53,6 @@
     <!-- ========== CATEGORIES ========== -->
     <section class="categories">
         <div class="container">
-            <h2 class="section-title">Shop by Category</h2>
             <div class="category-grid">
                 <div class="category-card" onclick="filterByCategory('Lipstick')">
                     <div class="category-icon"><i class="fas fa-lipstick"></i></div>
@@ -74,12 +73,32 @@
         </div>
     </section>
 
+    <!-- ========== SALE BANNER ========== -->
+    <section class="sale-banner" id="saleBanner" style="display:none;">
+        <div class="container">
+            <div class="sale-banner-inner">
+                <div class="sale-banner-text">
+                    <span class="sale-tag">SALE</span>
+                    <h2>Up to <span id="maxDiscount">30</span>% Off</h2>
+                    <p>Limited time offers on selected products</p>
+                </div>
+                <a href="#products" class="btn btn-sale" onclick="filterOnSale()">Shop the Sale <i class="fas fa-arrow-right"></i></a>
+            </div>
+        </div>
+    </section>
+
     <!-- ========== PRODUCTS ========== -->
     <section class="products-section" id="products">
         <div class="container">
             <h2 class="section-title" id="productsTitle">All Products</h2>
+            <div class="filter-bar" id="filterBar">
+                <button class="filter-btn active" onclick="filterByCategory('all')">All</button>
+                <button class="filter-btn" onclick="filterByCategory('Lipstick')">Lipsticks</button>
+                <button class="filter-btn" onclick="filterByCategory('Eyeshadow')">Eyeshadow</button>
+                <button class="filter-btn" onclick="filterByCategory('Eyeliner')">Eyeliner</button>
+                <button class="filter-btn btn-sale-filter" onclick="filterOnSale()">On Sale</button>
+            </div>
             <div class="products-grid" id="productsGrid">
-                <!-- Products loaded here by JavaScript -->
                 <div class="loading-page"><div class="spinner"></div> Loading products...</div>
             </div>
         </div>
@@ -180,23 +199,33 @@
             allProducts = await Products.getAll();
             renderProducts(allProducts);
             updateCartBadge();
+            showSaleBanner();
         });
 
         // --- Render products to the grid ---
         function renderProducts(products) {
             const grid = document.getElementById('productsGrid');
             if (products.length === 0) {
-                grid.innerHTML = '<p class="no-products"><i class="fas fa-box-open" style="font-size:2rem;display:block;margin-bottom:10px;color:var(--primary-light);"></i>No products found. Admin can add products from the admin panel.</p>';
+                grid.innerHTML = '<p class="no-products"><i class="fas fa-box-open" style="font-size:2rem;display:block;margin-bottom:10px;color:var(--rose-light);"></i>No products found.</p>';
                 return;
             }
 
             grid.innerHTML = products.map(product => {
                 const icon = product.category === 'Lipstick' ? 'fa-lipstick' : product.category === 'Eyeliner' ? 'fa-pen-nib' : 'fa-eye';
+                const saleBadge = product.is_on_sale
+                    ? `<span class="sale-badge">${product.discount_percent}% OFF</span>`
+                    : '';
+                const offerBadge = product.offer_text && !product.is_on_sale
+                    ? `<span class="offer-badge">${product.offer_text}</span>`
+                    : '';
+                const priceHtml = product.is_on_sale && product.original_price
+                    ? `<p class="price"><span class="price-original">\u20B9${product.original_price}</span> \u20B9${product.price}</p>`
+                    : `<p class="price">\u20B9${product.price}</p>`;
                 return `
                 <div class="product-card">
                     <a href="product.html?id=${product.id}">
                         <div class="product-image" style="background: linear-gradient(135deg, ${product.shade_code}30 0%, ${product.shade_code}10 100%);">
-                            <span class="product-badge">${product.category}</span>
+                            ${saleBadge}${offerBadge}
                             ${product.image_url
                                 ? `<img src="${product.image_url}" alt="${product.name}">`
                                 : `<div class="placeholder-img" style="background-color:${product.shade_code}20;">
@@ -208,7 +237,7 @@
                     <div class="product-info">
                         <h3>${product.name}</h3>
                         <p class="shade-name"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${product.shade_code};vertical-align:middle;margin-right:4px;box-shadow:0 1px 4px ${product.shade_code}60;"></span>${product.shade_code}</p>
-                        <p class="price">\u20B9${Number(product.price).toFixed(0)}</p>
+                        ${priceHtml}
                         <button class="btn btn-primary btn-block" onclick="addToCartFromHome('${product.id}')">
                             <i class="fas fa-shopping-bag"></i> Add to Bag
                         </button>
@@ -217,11 +246,34 @@
             }).join('');
         }
 
+        // --- Show sale banner if products are on sale ---
+        function showSaleBanner() {
+            const saleProducts = allProducts.filter(p => p.is_on_sale);
+            if (saleProducts.length > 0) {
+                const maxDisc = Math.max(...saleProducts.map(p => p.discount_percent || 0));
+                document.getElementById('maxDiscount').textContent = maxDisc;
+                document.getElementById('saleBanner').style.display = 'block';
+            }
+        }
+
         // --- Filter by category ---
         function filterByCategory(category) {
-            document.getElementById('productsTitle').textContent = category + 's';
-            const filtered = allProducts.filter(p => p.category === category);
-            renderProducts(filtered);
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            if (category === 'all') {
+                document.getElementById('productsTitle').textContent = 'All Products';
+                renderProducts(allProducts);
+            } else {
+                document.getElementById('productsTitle').textContent = category + 's';
+                renderProducts(allProducts.filter(p => p.category === category));
+            }
+            document.getElementById('products').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // --- Filter on-sale products ---
+        function filterOnSale() {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('productsTitle').textContent = 'On Sale';
+            renderProducts(allProducts.filter(p => p.is_on_sale));
             document.getElementById('products').scrollIntoView({ behavior: 'smooth' });
         }
 
